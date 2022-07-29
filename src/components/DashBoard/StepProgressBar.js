@@ -1,62 +1,83 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "react-step-progress-bar/styles.css";
 import { ProgressBar, Step } from "react-step-progress-bar";
 import HoverComponent from "./HoverComponent";
 import styled from 'styled-components';
-
+import { FileRichtext } from "react-bootstrap-icons";
+import { render } from "@testing-library/react";
+import dbFe from 'db_fe';
 
 
 const steps = [
   {
-    status: "연계항목 분석", statusCode: 1
+    status: "", statusCode: 1, component: <HoverComponent />
   },
   {
-    status: "보유기관 설정", statusCode: 2
+    status: "", statusCode: 2
   },
   {
-    status: "연계항목 확정", statusCode: 3
+    status: "", statusCode: 3
   },
   {
-    status: "APIG 설정", statusCode: 4
+    status: "", statusCode: 4
   },
   {
-    status: "ApigClient 설정", statusCode: 5
+    status: "", statusCode: 5
   },
   {
-    status: "업무팀 호출확인", statusCode: 6
+    status: "", statusCode: 6
   }
 ];
+
+for (const si in dbFe.stepsInfo) {
+  si.from(si, ([key, value]) => steps[key].status = si.value);
+}
+
 
 export default function StepProgressBar(props) {
     const currentIndex = steps.findIndex(s => s.statusCode === props.statusCode);
     const totalIndex = steps.length - 1;
     const percentage = (currentIndex + 0.5) / totalIndex * 100;
-    
-    const HoverText = () => {
-      return (
-        <div>
-          Hovering right meow!
-          <span role="img" aria-label="cat">
-            🐱
-          </span>
-        </div>
-      );
+
+    const [componentCoord, setComponentCoord] = useState();
+    const [hoveringComponent, setHoveringComponent] = useState();
+    const [isHoveringElement, setIsHoveringElement] = useState(false);
+    const [isHoveringComponent, setIsHoveringComponent] = useState(false);
+    const elementMouseOver = (step, e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const middleX = rect.x + rect.width/2
+      const middleY = rect.y + rect.height/2
+      setComponentCoord({x: middleX, y: middleY});
+      setHoveringComponent(step.component);
+      setIsHoveringElement(true);
+    };
+    const elementMouseOut = () => {
+      setIsHoveringElement(false);
+    };
+    const componentMouseOver = () => {
+      setIsHoveringComponent(true);
+    };
+    const componentMouseOut = () => {
+      setIsHoveringComponent(false);
     };
 
-    const [isHovering, setIsHovering] = useState(false);
-    const handleMouseOver = () => {
-      setIsHovering(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const dimmerRef = useRef();
+    const openModal = () => {
+      setIsModalOpen(true);
+    };
+      const closeModal = () => {
+      if (isModalOpen === true) return setIsModalOpen(false);
     };
   
-    const handleMouseOut = () => {
-      setIsHovering(false);
-    };
+
 
     return (
       <>
-        <div style={{ margin: 30 }}>
+        <div style={{ margin: 30, marginTop: 20 }} onClick={closeModal}>
           <ProgressBar
-            width={700}
+            style={{height: "1px"}}
+            width={800}
             percent={percentage}
             filledBackground="linear-gradient(to right, #41ad49, #41ad49)"
           >
@@ -79,8 +100,10 @@ export default function StepProgressBar(props) {
                       backgroundColor: accomplished ? "green" : "gray"
                       }}
                     >
-                      <div onMouseOver={handleMouseOver} onMouseOut={handleMouseOut} style={{border: "1px solid red"}}>
-                        <br/><br/><br/>
+                      <div
+                        onMouseOver={(e) => {elementMouseOver(step, e)}}
+                        onMouseOut={elementMouseOut}
+                      ><br/><br/><br/>
                         {step.status}
                       </div>
                     </div>
@@ -89,7 +112,14 @@ export default function StepProgressBar(props) {
               );
           })}
           </ProgressBar>
-          {isHovering && <HoverDiv x={500} y={200}><HoverComponent /></HoverDiv>}
+          {(isHoveringElement||isHoveringComponent)&&
+            <HoverDiv
+              coord={componentCoord}
+              onMouseOver={componentMouseOver}
+              onMouseOut={componentMouseOut}
+            >
+              {hoveringComponent}
+            </HoverDiv>}
         </div>
       </>
     );
@@ -97,6 +127,6 @@ export default function StepProgressBar(props) {
 
 const HoverDiv = styled.div`
   position: absolute;
-  left: ${props => props.x}px;
-  top: ${props => props.y}px;
+  left: ${props => props.coord.x}px;
+  top: ${props => props.coord.y}px;
 `;
