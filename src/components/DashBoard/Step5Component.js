@@ -3,11 +3,14 @@ import Card from 'react-bootstrap/Card';
 import dbFe from 'db_fe';
 
 const data = {
-  cardHeader: "연계항목 분석",
-  cardText: "설명"
+  cardHeader: "",
+  cardText: ""
 }
 
-export default function HoverComponent() {
+data.cardHeader = dbFe.stepList.step5.nm
+data.cardText = dbFe.stepList.step5.description
+
+export default function Step5Component() {
 
   return (
     <Card style={{ width: '20rem' }}>
